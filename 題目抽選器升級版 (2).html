@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>記憶型題目扭蛋機</title>
+    <style>
+        :root {
+            --primary: #ff7675;
+            --secondary: #74b9ff;
+            --accent: #55efc4;
+            --text: #2d3436;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #dfe6e9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .status-tag {
+            font-size: 0.8rem;
+            background: #eee;
+            padding: 4px 12px;
+            border-radius: 20px;
+            color: #636e72;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        #result-box {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--text);
+            min-height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 3px solid var(--secondary);
+            border-radius: 15px;
+            margin: 20px 0;
+            background: #f9f9f9;
+            padding: 15px;
+        }
+
+        .controls button {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: var(--primary);
+            color: white;
+            transition: 0.2s;
+            box-shadow: 0 5px 0 #d63031;
+        }
+
+        .controls button:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #d63031;
+        }
+
+        .controls button:disabled {
+            background: #b2bec3;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .admin-section {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            text-align: left;
+        }
+
+        .admin-section h3 { font-size: 1rem; color: #636e72; display: flex; justify-content: space-between; align-items: center; }
+
+        .input-group {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .add-btn {
+            background: var(--accent);
+            border: none;
+            padding: 0 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .topic-list {
+            list-style: none;
+            padding: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+
+        .topic-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+            align-items: center;
+        }
+
+        .topic-item.used {
+            text-decoration: line-through;
+            color: #b2bec3;
+            background: #fafafa;
+        }
+
+        .del-btn { color: #ff7675; cursor: pointer; border: none; background: none; font-size: 1.2rem; }
+
+        .shake { animation: shake 0.5s ease-in-out infinite; }
+        @keyframes shake {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(3deg); }
+            75% { transform: rotate(-3deg); }
+            100% { transform: rotate(0deg); }
+        }
+        
+        .clear-storage {
+            font-size: 0.7rem;
+            color: #b2bec3;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="status-tag" id="status">載入中...</div>
+    <h2 style="margin:0 0 10px 0;">🎮 記憶型扭蛋機</h2>
+    
+    <div id="result-box">準備開始！</div>
+
+    <div class="controls">
+        <button id="draw-btn" onclick="startDraw()">抽一個題目</button>
+        <button id="reset-btn" onclick="resetPool()" style="background: #636e72; box-shadow: 0 5px 0 #2d3436; margin-top: 10px; font-size: 0.9rem; padding: 8px;">重置抽獎池</button>
+    </div>
+
+    <div class="admin-section">
+        <h3>
+            📝 題目管理 
+            <span class="clear-storage" onclick="hardReset()">清空所有存檔</span>
+        </h3>
+        <div class="input-group">
+            <input type="text" id="new-topic" placeholder="新增題目...">
+            <button class="add-btn" id="add-btn">新增</button>
+        </div>
+        <ul class="topic-list" id="topic-list-ui"></ul>
+    </div>
+</div>
+
+<script>
+    // 1. 定義預設題目
+    const defaultTopics = ["唱一首歌", "做 5 個深蹲", "分享一個秘密", "模仿一種動物"];
+
+    // 2. 初始化資料：優先讀取存檔，若無則使用預設值
+    let allTopics = JSON.parse(localStorage.getItem('gacha_allTopics'));
+    if (!allTopics || allTopics.length === 0) {
+        allTopics = [...defaultTopics];
+    }
+
+    let pool = JSON.parse(localStorage.getItem('gacha_pool'));
+    if (!pool) {
+        pool = [...allTopics];
+    }
+
+    // 儲存函式
+    function saveData() {
+        localStorage.setItem('gacha_allTopics', JSON.stringify(allTopics));
+        localStorage.setItem('gacha_pool', JSON.stringify(pool));
+    }
+
+    // 更新介面
+    function updateUI() {
+        const listUI = document.getElementById('topic-list-ui');
+        const status = document.getElementById('status');
+        const drawBtn = document.getElementById('draw-btn');
+        
+        status.innerText = `剩餘可用：${pool.length} / 總數：${allTopics.length}`;
+        
+        listUI.innerHTML = '';
+        allTopics.forEach((t, index) => {
+            const isUsed = !pool.includes(t);
+            listUI.innerHTML += `
+                <li class="topic-item ${isUsed ? 'used' : ''}">
+                    <span>${t}</span>
+                    <button class="del-btn" onclick="deleteTopic(${index})">×</button>
+                </li>
+            `;
+        });
+
+        drawBtn.disabled = (pool.length === 0);
+        saveData();
+    }
+
+    // 修正後的新增功能
+    document.getElementById('add-btn').addEventListener('click', function() {
+        const input = document.getElementById('new-topic');
+        const val = input.value.trim();
+        if (val) {
+            allTopics.push(val);
+            pool.push(val);
+            input.value = '';
+            updateUI();
+        }
+    });
+
+    function deleteTopic(index) {
+        const target = allTopics[index];
+        allTopics.splice(index, 1);
+        const poolIndex = pool.indexOf(target);
+        if (poolIndex > -1) pool.splice(poolIndex, 1);
+        updateUI();
+    }
+
+    function startDraw() {
+        if (pool.length === 0) return;
+        const btn = document.getElementById('draw-btn');
+        const resBox = document.getElementById('result-box');
+        
+        btn.disabled = true;
+        resBox.innerText = "抽選中...";
+        resBox.classList.add('shake');
+
+        setTimeout(() => {
+            resBox.classList.remove('shake');
+            const randomIndex = Math.floor(Math.random() * pool.length);
+            const picked = pool.splice(randomIndex, 1)[0];
+            resBox.innerText = picked;
+            btn.disabled = false;
+            updateUI();
+        }, 800);
+    }
+
+    function resetPool() {
+        pool = [...allTopics];
+        document.getElementById('result-box').innerText = "已重置，準備開始！";
+        updateUI();
+    }
+
+    function hardReset() {
+        if(confirm("確定要清空所有題目並恢復預設嗎？")) {
+            localStorage.removeItem('gacha_allTopics');
+            localStorage.removeItem('gacha_pool');
+            allTopics = [...defaultTopics];
+            pool = [...allTopics];
+            updateUI();
+        }
+    }
+
+    // 初始執行一次
+    updateUI();
+</script>
+
+</body>
+</html>
