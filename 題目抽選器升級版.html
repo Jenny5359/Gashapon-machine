@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>題目抽選器</title>
+    <title>記憶型題目扭蛋機</title>
     <style>
         :root {
             --primary: #ff7675;
@@ -102,7 +102,7 @@
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 8px;
-            font-size: 16px; /* 防止 iOS 自動放大 */
+            font-size: 16px;
         }
 
         .add-btn {
@@ -159,88 +159,11 @@
 <body>
 
 <div class="card">
-    <div class="status-tag" id="status">剩餘題目：0</div>
-    <h2 style="margin:0 0 10px 0;">🎮 題目抽選器</h2>
+    <div class="status-tag" id="status">載入中...</div>
+    <h2 style="margin:0 0 10px 0;">🎮 記憶型扭蛋機</h2>
     
-    <div id="result-box">請點選下方紅色按鈕開始</div>
+    <div id="result-box">準備開始！</div>
 
     <div class="controls">
         <button id="draw-btn" onclick="startDraw()">抽一個題目</button>
-        <button id="reset-btn" onclick="resetPool()" style="background: #636e72; box-shadow: 0 5px 0 #2d3436; margin-top: 10px; font-size: 0.9rem; padding: 8px;">重置抽獎池 (全部重抽)</button>
-    </div>
-
-    <div class="admin-section">
-        <h3>
-            📝 題目管理 
-            <span class="clear-storage" onclick="hardReset()">清空所有存檔</span>
-        </h3>
-        <div class="input-group">
-            <input type="text" id="new-topic" placeholder="新增題目...">
-            <button class="add-btn" onclick="addTopic()">新增</button>
-        </div>
-        <ul class="topic-list" id="topic-list-ui"></ul>
-    </div>
-</div>
-
-<script>
-    // 預設題目 (僅在第一次打開網頁且沒存檔時顯示)
-    const defaultTopics = ["大象", "飯糰", "蘋果", "三明治", "漢堡", "蛤蠣", "草莓", "甜甜圈"];
-
-    // 從 localStorage 讀取資料
-    let allTopics = JSON.parse(localStorage.getItem('gacha_allTopics')) || defaultTopics;
-    let pool = JSON.parse(localStorage.getItem('gacha_pool')) || [...allTopics];
-
-    // 保存資料到 localStorage
-    function saveData() {
-        localStorage.setItem('gacha_allTopics', JSON.stringify(allTopics));
-        localStorage.setItem('gacha_pool', JSON.stringify(pool));
-    }
-
-    function updateUI() {
-        const listUI = document.getElementById('topic-list-ui');
-        const status = document.getElementById('status');
-        const drawBtn = document.getElementById('draw-btn');
-        
-        status.innerText = `剩餘可用：${pool.length} / 總數：${allTopics.length}`;
-        
-        listUI.innerHTML = '';
-        allTopics.forEach((t, index) => {
-            const isUsed = !pool.includes(t);
-            listUI.innerHTML += `
-                <li class="topic-item ${isUsed ? 'used' : ''}">
-                    <span>${t}</span>
-                    <button class="del-btn" onclick="deleteTopic(${index})">×</button>
-                </li>
-            `;
-        });
-
-        drawBtn.disabled = (pool.length === 0);
-        if(pool.length === 0 && allTopics.length > 0) {
-            document.getElementById('result-box').innerText = "題目已抽完！";
-        }
-        saveData(); // 每次 UI 更新都順便存檔
-    }
-
-    function addTopic() {
-        const input = document.getElementById('new-topic');
-        const val = input.value.trim();
-        if (val) {
-            allTopics.push(val);
-            pool.push(val); // 新增的題目直接入池
-            input.value = '';
-            updateUI();
-        }
-    }
-
-    function deleteTopic(index) {
-        if(!confirm("確定要刪除這個題目嗎？")) return;
-        const target = allTopics[index];
-        allTopics.splice(index, 1);
-        const poolIndex = pool.indexOf(target);
-        if (poolIndex > -1) pool.splice(poolIndex, 1);
-        updateUI();
-    }
-
-    function startDraw() {
-        if (pool.length === 0) return;
-        const btn = document.getElementById
+        <button id="reset-btn" onclick="resetPool()" style="background: #636e72; box-shadow: 0 5px 0 #2d3436; margin-top: 10px
