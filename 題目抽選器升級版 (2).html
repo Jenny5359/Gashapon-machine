@@ -160,9 +160,9 @@
 
 <div class="card">
     <div class="status-tag" id="status">載入中...</div>
-    <h2 style="margin:0 0 10px 0;">🎮 記憶型扭蛋機</h2>
+    <h2 style="margin:0 0 10px 0;">🎮 雞尾酒抽抽樂</h2>
     
-    <div id="result-box">準備開始！</div>
+    <div id="result-box">請點選下方紅色按鈕抽題</div>
 
     <div class="controls">
         <button id="draw-btn" onclick="startDraw()">抽一個題目</button>
@@ -184,7 +184,7 @@
 
 <script>
     // 1. 定義預設題目
-    const defaultTopics = ["唱一首歌", "做 5 個深蹲", "分享一個秘密", "模仿一種動物"];
+    const defaultTopics = ["大象", "飯糰", "蘋果", "三明治", "漢堡", "蛤蠣", "草莓", "甜甜圈"];
 
     // 2. 初始化資料：優先讀取存檔，若無則使用預設值
     let allTopics = JSON.parse(localStorage.getItem('gacha_allTopics'));
