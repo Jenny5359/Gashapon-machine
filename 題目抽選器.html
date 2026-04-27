@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>進階題目扭蛋機</title>
+    <style>
+        :root {
+            --primary: #ff7675;
+            --secondary: #74b9ff;
+            --accent: #55efc4;
+            --text: #2d3436;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #dfe6e9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        /* 顯示狀態 */
+        .status-tag {
+            font-size: 0.8rem;
+            background: #eee;
+            padding: 4px 12px;
+            border-radius: 20px;
+            color: #636e72;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        #result-box {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--text);
+            min-height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 3px solid var(--secondary);
+            border-radius: 15px;
+            margin: 20px 0;
+            background: #f9f9f9;
+            padding: 15px;
+        }
+
+        .controls button {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: var(--primary);
+            color: white;
+            transition: 0.2s;
+            box-shadow: 0 5px 0 #d63031;
+        }
+
+        .controls button:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #d63031;
+        }
+
+        .controls button:disabled {
+            background: #b2bec3;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* 管理區域 */
+        .admin-section {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            text-align: left;
+        }
+
+        .admin-section h3 { font-size: 1rem; color: #636e72; }
+
+        .input-group {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .add-btn {
+            background: var(--accent);
+            border: none;
+            padding: 0 15px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .topic-list {
+            list-style: none;
+            padding: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+
+        .topic-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+
+        .topic-item.used {
+            text-decoration: line-through;
+            color: #b2bec3;
+        }
+
+        .del-btn { color: #ff7675; cursor: pointer; border: none; background: none; }
+
+        .shake { animation: shake 0.5s ease-in-out infinite; }
+        @keyframes shake {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(3deg); }
+            75% { transform: rotate(-3deg); }
+            100% { transform: rotate(0deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="status-tag" id="status">剩餘題目：0</div>
+    <h2 style="margin:0 0 10px 0;">🎮 題目抽選機</h2>
+    
+    <div id="result-box">點擊按鈕開始</div>
+
+    <div class="controls">
+        <button id="draw-btn" onclick="startDraw()">抽一個題目</button>
+        <button id="reset-btn" onclick="resetPool()" style="background: #636e72; box-shadow: 0 5px 0 #2d3436; margin-top: 10px; font-size: 0.9rem; padding: 8px;">重置抽獎池</button>
+    </div>
+
+    <div class="admin-section">
+        <h3>📝 題目管理</h3>
+        <div class="input-group">
+            <input type="text" id="new-topic" placeholder="輸入新題目...">
+            <button class="add-btn" onclick="addTopic()">新增</button>
+        </div>
+        <ul class="topic-list" id="topic-list-ui">
+            </ul>
+    </div>
+</div>
+
+<script>
+    // 初始題目
+    let allTopics = ["唱一首歌", "做 5 個深蹲", "分享一個秘密", "模仿一種動物"];
+    let pool = [...allTopics]; // 抽獎池
+
+    function updateUI() {
+        const listUI = document.getElementById('topic-list-ui');
+        const status = document.getElementById('status');
+        const drawBtn = document.getElementById('draw-btn');
+        
+        // 更新狀態文字
+        status.innerText = `剩餘可用題目：${pool.length} / 總數：${allTopics.length}`;
+        
+        // 更新列表顯示
+        listUI.innerHTML = '';
+        allTopics.forEach((t, index) => {
+            const isUsed = !pool.includes(t);
+            listUI.innerHTML += `
+                <li class="topic-item ${isUsed ? 'used' : ''}">
+                    <span>${index + 1}. ${t} ${isUsed ? '(已抽過)' : ''}</span>
+                    <button class="del-btn" onclick="deleteTopic(${index})">❌</button>
+                </li>
+            `;
+        });
+
+        // 沒題目時停用按鈕
+        drawBtn.disabled = (pool.length === 0);
+        if(pool.length === 0) {
+            document.getElementById('result-box').innerText = "題目已抽完！請重置或新增題目。";
+        }
+    }
+
+    function addTopic() {
+        const input = document.getElementById('new-topic');
+        const val = input.value.trim();
+        if (val) {
+            allTopics.push(val);
+            pool.push(val);
+            input.value = '';
+            updateUI();
+        }
+    }
+
+    function deleteTopic(index) {
+        const target = allTopics[index];
+        allTopics.splice(index, 1);
+        // 同時從 pool 中移除
+        const poolIndex = pool.indexOf(target);
+        if (poolIndex > -1) pool.splice(poolIndex, 1);
+        updateUI();
+    }
+
+    function startDraw() {
+        if (pool.length === 0) return;
+
+        const btn = document.getElementById('draw-btn');
+        const resBox = document.getElementById('result-box');
+        
+        btn.disabled = true;
+        resBox.innerText = "抽選中...";
+        resBox.classList.add('shake');
+
+        setTimeout(() => {
+            resBox.classList.remove('shake');
+            
+            // 隨機從 pool 抽一個並移除
+            const randomIndex = Math.floor(Math.random() * pool.length);
+            const picked = pool.splice(randomIndex, 1)[0];
+            
+            resBox.innerText = picked;
+            btn.disabled = false;
+            updateUI();
+        }, 800);
+    }
+
+    function resetPool() {
+        pool = [...allTopics];
+        document.getElementById('result-box').innerText = "已重置，準備開始！";
+        updateUI();
+    }
+
+    // 初始化顯示
+    updateUI();
+</script>
+
+</body>
+</html>
