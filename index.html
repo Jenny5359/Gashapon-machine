@@ -84,7 +84,7 @@
 
         .admin-section {
             margin-top: 30px;
-            border-top: 1px solid #eee;
+            border-top: 2px dashed #eee;
             padding-top: 20px;
             text-align: left;
         }
@@ -169,62 +169,61 @@
         <button id="reset-btn" onclick="resetPool()" style="background: #636e72; box-shadow: 0 5px 0 #2d3436; margin-top: 10px; font-size: 0.9rem; padding: 8px;">重置抽選池</button>
     </div>
 
-    <div class="admin-section">
+    <!-- 管理後台：預設隱藏 -->
+    <div class="admin-section" id="admin-panel" style="display: none;">
         <h3>
             📝 題目管理 
             <span class="clear-storage" onclick="hardReset()">清空所有存檔</span>
-       </h3>
-    <div class="input-group">
-        <input type="text" id="new-topic" placeholder="新增題目...">
-        <button class="add-btn" id="add-btn">新增</button>
+        </h3>
+        <div class="input-group">
+            <input type="text" id="new-topic" placeholder="新增題目...">
+            <button class="add-btn" id="add-btn">新增</button>
+        </div>
+        <ul class="topic-list" id="topic-list-ui"></ul>
     </div>
-    <ul class="topic-list" id="topic-list-ui"></ul>
-</div>
 
-<!-- 底部隱藏開關 -->
-<div style="margin-top: 30px; opacity: 0.3;">
-    <span onclick="toggleAdmin()" style="cursor: pointer; font-size: 12px; color: #888;">⚙️ 系統設定</span>
+    <!-- 底部隱藏開關 -->
+    <div style="margin-top: 40px; opacity: 0.2;">
+        <span onclick="toggleAdmin()" style="cursor: pointer; font-size: 12px; color: #888;">⚙️ 系統設定</span>
+    </div>
 </div>
 
 <script>
-    // 新增切換顯示的函式
+    // --- 系統開關功能 ---
     function toggleAdmin() {
-    const panel = document.getElementById('admin-panel');
-    
-    // 如果目前是隱藏的，詢問密碼
-    if (panel.style.display === 'none') {
-        const password = prompt("請輸入管理員密碼：");
-        if (password === "CDC") { // 這裡可以改成你想要的密碼
-            panel.style.display = 'block';
-            window.scrollTo(0, document.body.scrollHeight);
+        const panel = document.getElementById('admin-panel');
+        
+        if (panel.style.display === 'none') {
+            const password = prompt("請輸入管理員密碼：");
+            if (password === "CDC") { 
+                panel.style.display = 'block';
+                window.scrollTo({
+                    top: document.body.scrollHeight,
+                    behavior: 'smooth'
+                });
+            } else if (password !== null) {
+                alert("密碼錯誤！");
+            }
         } else {
-            alert("密碼錯誤！");
+            panel.style.display = 'none';
         }
-    } else {
-        panel.style.display = 'none';
     }
-}
-    // 1. 定義預設題目
+
+    // --- 核心邏輯功能 ---
     const defaultTopics = ["楊丞琳－曖昧", "楊丞琳－雨愛", "韋禮安－還是會", "潘瑋柏張韶涵－快樂崇拜", "阿妹－三天三夜", "周杰倫－陽光宅男"];
 
-    // 2. 初始化資料：優先讀取存檔，若無則使用預設值
-    let allTopics = JSON.parse(localStorage.getItem('gacha_allTopics'));
-    if (!allTopics || allTopics.length === 0) {
-        allTopics = [...defaultTopics];
-    }
-
+    let allTopics = JSON.parse(localStorage.getItem('gacha_allTopics')) || [...defaultTopics];
     let pool = JSON.parse(localStorage.getItem('gacha_pool'));
+    
     if (!pool) {
         pool = [...allTopics];
     }
 
-    // 儲存函式
     function saveData() {
         localStorage.setItem('gacha_allTopics', JSON.stringify(allTopics));
         localStorage.setItem('gacha_pool', JSON.stringify(pool));
     }
 
-    // 更新介面
     function updateUI() {
         const listUI = document.getElementById('topic-list-ui');
         const status = document.getElementById('status');
@@ -247,7 +246,6 @@
         saveData();
     }
 
-    // 修正後的新增功能
     document.getElementById('add-btn').addEventListener('click', function() {
         const input = document.getElementById('new-topic');
         const val = input.value.trim();
@@ -294,15 +292,14 @@
 
     function hardReset() {
         if(confirm("確定要清空新增選項並恢復預設題目嗎？")) {
-            localStorage.removeItem('gacha_allTopics');
-            localStorage.removeItem('gacha_pool');
+            localStorage.clear();
             allTopics = [...defaultTopics];
             pool = [...allTopics];
+            document.getElementById('result-box').innerText = "已恢復初始設定";
             updateUI();
         }
     }
 
-    // 初始執行一次
     updateUI();
 </script>
 
