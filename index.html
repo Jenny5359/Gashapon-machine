@@ -173,16 +173,37 @@
         <h3>
             📝 題目管理 
             <span class="clear-storage" onclick="hardReset()">清空所有存檔</span>
-        </h3>
-        <div class="input-group">
-            <input type="text" id="new-topic" placeholder="新增題目...">
-            <button class="add-btn" id="add-btn">新增</button>
-        </div>
-        <ul class="topic-list" id="topic-list-ui"></ul>
+       </h3>
+    <div class="input-group">
+        <input type="text" id="new-topic" placeholder="新增題目...">
+        <button class="add-btn" id="add-btn">新增</button>
     </div>
+    <ul class="topic-list" id="topic-list-ui"></ul>
+</div>
+
+<!-- 底部隱藏開關 -->
+<div style="margin-top: 30px; opacity: 0.3;">
+    <span onclick="toggleAdmin()" style="cursor: pointer; font-size: 12px; color: #888;">⚙️ 系統設定</span>
 </div>
 
 <script>
+    // 新增切換顯示的函式
+    function toggleAdmin() {
+    const panel = document.getElementById('admin-panel');
+    
+    // 如果目前是隱藏的，詢問密碼
+    if (panel.style.display === 'none') {
+        const password = prompt("請輸入管理員密碼：");
+        if (password === "CDC") { // 這裡可以改成你想要的密碼
+            panel.style.display = 'block';
+            window.scrollTo(0, document.body.scrollHeight);
+        } else {
+            alert("密碼錯誤！");
+        }
+    } else {
+        panel.style.display = 'none';
+    }
+}
     // 1. 定義預設題目
     const defaultTopics = ["楊丞琳－曖昧", "楊丞琳－雨愛", "韋禮安－還是會", "潘瑋柏張韶涵－快樂崇拜", "阿妹－三天三夜", "周杰倫－陽光宅男"];
 
